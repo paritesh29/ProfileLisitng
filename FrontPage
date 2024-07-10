@@ -1,0 +1,165 @@
+import 'dart:core';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'Secondpage.dart';
+
+class Frontpage extends StatefulWidget {
+  const Frontpage({super.key});
+
+  @override
+  State<Frontpage> createState() => _FrontpageState();
+}
+
+class _FrontpageState extends State<Frontpage> {
+  final key = GlobalKey<FormState>();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  File? image;
+
+  @override
+  void initState() {
+    super.initState();
+    emailController.clear();
+    passwordController.clear();
+  }
+
+  Future<void> SaveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> emails = prefs.getStringList("emails") ?? [];
+    List<String> photos = prefs.getStringList("photos") ?? [];
+
+    // Debug statements
+    print("Emails before saving: $emails");
+    print("Photos before saving: $photos");
+
+    emails.add(emailController.text);
+    if (image != null) {
+      photos.add(image!.path);
+    }
+
+    await prefs.setStringList("emails", emails);
+    await prefs.setStringList("photos", photos);
+
+    // Debug statements
+    print("Emails after saving: $emails");
+    print("Photos after saving: $photos");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Form(
+          key: key,
+          child: Column(
+            children: [
+              SizedBox(height: 70),
+              GestureDetector(
+                onTap: () {
+                  GetImage();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey,
+                    borderRadius: BorderRadius.circular(70),
+                  ),
+                  height: 150,
+                  width: 150,
+                  child: image != null
+                      ? ClipOval(child: Image.file(image!, fit: BoxFit.cover))
+                      : Icon(Icons.person, size: 70),
+                ),
+              ),
+              SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    suffixIcon: Icon(Icons.email),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Enter Value";
+                    }
+                    return null;
+                  },
+                  controller: emailController,
+                ),
+              ),
+              SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: TextFormField(
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    suffixIcon: Icon(Icons.key),
+                    labelText: "Password",
+                    border: OutlineInputBorder(),
+                  ),
+                  controller: passwordController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Enter password";
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(height: 40),
+              GestureDetector(
+                onTap: () async {
+                  if (key.currentState!.validate()) {
+                    await SaveData();
+                    Get.to(() => Secondpage(email: emailController.text, image: image))!.then((_) {
+                      emailController.clear();
+                      passwordController.clear();
+                      setState(() {
+                        image = null;
+                      });
+                    });
+                  }
+                  print(emailController.text);
+                  print(passwordController.text);
+                },
+                child: Container(
+                  height: 40,
+                  width: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.deepPurple,
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Continue",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28),
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future GetImage() async {
+    final pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
+    try {
+      if (pickedImage == null) return;
+      final imageTemp = File(pickedImage.path);
+      setState(() {
+        image = imageTemp;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+}
