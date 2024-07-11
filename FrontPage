@@ -31,7 +31,7 @@ class _FrontpageState extends State<Frontpage> {
     List<String> emails = prefs.getStringList("emails") ?? [];
     List<String> photos = prefs.getStringList("photos") ?? [];
 
-    // Debug statements
+
     print("Emails before saving: $emails");
     print("Photos before saving: $photos");
 
@@ -85,6 +85,10 @@ class _FrontpageState extends State<Frontpage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return "Enter Value";
+                    }
+                    if(!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                        .hasMatch(value)){
+                      return "Enter a Valid email";
                     }
                     return null;
                   },
